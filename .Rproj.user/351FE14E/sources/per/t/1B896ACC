@@ -1,0 +1,27 @@
+{
+    "id": "1B896ACC",
+    "path": "~/marathon_finishers/scripts/04-test_analysis_data.R",
+    "project_path": "scripts/04-test_analysis_data.R",
+    "type": "r_source",
+    "hash": "3359541809",
+    "contents": "",
+    "dirty": false,
+    "created": 1732397157121.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "tempName": "Untitled1",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "61,32",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1732650390,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1732650390,
+    "read_only": false,
+    "read_only_alternatives": []
+}
