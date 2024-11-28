@@ -1,13 +1,12 @@
 ---
 title: "What Makes a Marathon Runner Fast? Key Predictors of Finishing Times"
-subtitle: "Age, gender, nationality, and race experience are the strongest factors influencing performance."
+subtitle: "How age, gender, nationality, and race experience shape the journey to faster finishes."
 author: 
   - Sophia Brothers
 thanks: "Code and data are available at: [https://github.com/sophiabrothers1/marathonfinishers](https://github.com/sophiabrothers1/marathonfinishers)."
 date: today
 date-format: long
-abstract: "This paper develops a linear model for marathon finishing times using factors such as age, gender, country, pace, and race experience. The analysis identifies key trends, including that younger runners, male participants, Kenyan athletes, and individuals with moderate NYRR race experience achieve the fastest time. These findings provide insights into the characteristics that influence marathon performance, contributing to a deeper understanding of endurance running. 
-This research provides valuable insights for athletes, coaches, and sports organizations, helping them design better training strategies and improve marathon performance."
+abstract: "This paper develops a generalized additive model for marathon finishing times using factors such as age, gender, country, pace, and race experience. The analysis identifies key trends, including that younger runners, male participants, Kenyan athletes, and individuals with moderate NYRR race experience achieve the fastest time. These findings provide information into the characteristics that influence marathon performance, contributing to a deeper understanding of endurance running. This research provides important knowledge for athletes, coaches, and sports organizations, helping them design better training strategies and improve marathon performance."
 format: pdf
 toc: true
 toc-depth: 3
@@ -22,7 +21,7 @@ bibliography: references.bib
 
 # Install Packages if not downloaded:
 required_packages <- c(
-  "tidyverse", "here", "arrow", "ggplot2", "kableExtra", "modelsummary"
+  "tidyverse", "here", "arrow", "ggplot2", "kableExtra", "modelsummary", "mgcv", "tinytable"
 )
 for (p in required_packages) {
   if (!require(p, character.only = TRUE)) {
@@ -38,6 +37,8 @@ library(arrow)
 library(ggplot2)
 library(kableExtra)
 library(modelsummary)
+library(mgcv)
+library(tinytable)
 
 # load data
 cleaned_data <- read_parquet(here::here("data/analysis_data/marathon_results_cleaned.parquet"))
@@ -45,21 +46,25 @@ cleaned_data <- read_parquet(here::here("data/analysis_data/marathon_results_cle
 
 # Introduction
 
-Marathon running has grown exponentially in popularity in recent years, attracting individuals from diverse backgrounds to participate in races of varying distances and difficulty levels [@hillier]. Despite the increasing number of participants, predicting marathon performance remains a challenging task due to the multitude of factors influencing finishing times. These factors include age, gender, experience, and training, all of which contribute to the overall race outcome. However, while existing studies have explored marathon times, there remains a gap in understanding the quantitative relationships between these variables and how they influence performance.
+Marathon running has grown exponentially in popularity over the past few decades, attracting participants from diverse backgrounds and skill levels to races of varying distances and difficulty levels [@hillier]. While the surge in participants reflects the global appeal of marathon events, it also brings to light a significant challenge: predicting marathon performance. Understanding the factors that influence marathon finishing times is important not only for individual runners but also for race organizers, coaches, and sports scientists seeking to optimize training regimens, race strategies, and overall athlete performance.
 
-This paper aims to fill this gap by developing a linear regression model to predict marathon finishing times based on variables such as age, gender, country, and previous race experience. The primary estimand of this study is the prediction of a runner’s overall marathon finishing time, in seconds, as a function of their age, gender, country, and race count. By estimating this relationship, the model quantifies the effect of these variables on marathon performance and identifies the key factors that influence race outcomes.
+The estimand of this study is the causal effect of demographic and experience-based variables on marathon finishing times. Specifically, this research aims to quantify the influence of age, gender, country of origin, and cumulative race experience on a runner’s overall marathon finishing time. By identifying and modeling these relationships, we estimate how variations in these predictors impact the outcome of interest: marathon finishing time.
 
-The analysis revealed that age and gender are significant predictors of marathon finishing times, with older runners generally taking longer to finish, and male runners achieving faster times. These findings contribute to the broader understanding of marathon performance and can assist in setting realistic expectations for future participants based on their individual characteristics.
+The factors influencing marathon times are numerous and complex, including age, gender, previous race experience, health, and training practices. Existing research has highlighted the impact of certain demographic variables, such as age and gender, on marathon performance [@Cheuvront2005], but there remains a gap in the understanding of how these and other factors quantitatively influence finishing times. For instance, how does a runner's previous race experience impact their finishing time, and are there interactions between these factors that could provide more context to performance predictions?
 
-The paper is structured as follows: @sec-data discusses the data and data cleaning process, followed by the analysis of key variables and relationships in @sec-model. @sec-results then presents the results from the linear regression model, followed by a discussion of the implications of these findings in @sec-discussion. @sec-discussion also concludes with suggestions for future research and practical applications of the model.
+This paper seeks to address this gap by developing a model to predict marathon finishing times based on several key variables: age, gender, country of origin, and previous race experience. By using a generalized additive model (GAM), this study analyzes the non-linear relationships between these variables and their effect on marathon performance. The primary goal of the study is to quantify how these demographic and experience-based factors contribute to a runner’s overall marathon finishing time, providing both individual runners and race organizers with important context into what influences race outcomes.
+
+The results of this analysis have real-world implications for both individual runners and broader performance strategies. For runners, understanding the factors that most significantly impact their performance allows for more informed goal setting and training focus. For race organizers, identifying key predictors of performance could help in tailoring race-day experiences, such as pacing strategies, nutrition plans, and event management. Moreover, this information could help coaches better design training programs and guide runners on the areas that need improvement.
+
+The paper is structured as follows: @sec-data discusses the data and data cleaning process, followed by the analysis of key variables and relationships in @sec-model. @sec-results then presents the results from the GAM, followed by a discussion of the implications of these findings in @sec-discussion. @sec-discussion also concludes with suggestions for future research and practical applications of the model.
 
 # Data {#sec-data}
 
 ## Overview
 
-This study utilizes NYC marathon finishers' data that was sourced through the Data is Plural newsletter [@nycmarathon]. This data provides detailed information on select runner demographics, race results, and other performance-related metrics. The dataset includes variables such as runner identity, demographic information (age, gender, city, country), and race performance data (finishing times, pace, rankings). These variables together form a comprehensive profile of marathon participants, enabling the exploration of how different factors contribute to marathon outcomes.
+This study utilizes NYC marathon finishers' data that was sourced through the Data is Plural newsletter [@nycmarathon]. This data provides detailed information on select runner demographics, race results, and other performance-related metrics. The dataset includes variables such as runner identity, demographic information (age, gender, city, country), and race performance data (finishing times, pace, rankings). These variables together form a profile of marathon participants, enabling the analysis of how different factors contribute to marathon outcomes.
 
-We used R [@citeR] for data cleaning and analysis, leveraging packages such as **`tidyverse`** for data manipulation and visualization [@tidyverse], **`here`** for file path management [@here], **`lubridate`** for date handling [@lubridate], **`arrow`** for data storage and processing [@arrow], **`testthat`** for unit testing [@testthat], **`readr`** for reading structured data [@readr], **`dplyr`** for data manipulation [@dplyr], **`stringr`** for string operations [@stringr], **`ggplot2`** for creating visualizations [@ggplot2], **`caret`** for modeling [@caret], **`kableExtra`** for creating tables [@kableExtra], and **`modelsummary`** for summarizing models and results [@modelsummary].
+We used R [@citeR] for data cleaning and analysis, using packages such as **`tidyverse`** for data manipulation and visualization [@tidyverse], **`here`** for file path management [@here], **`lubridate`** for date handling [@lubridate], **`arrow`** for data storage and processing [@arrow], **`testthat`** for unit testing [@testthat], **`readr`** for reading structured data [@readr], **`dplyr`** for data manipulation [@dplyr], **`stringr`** for string operations [@stringr], **`ggplot2`** for creating visualizations [@ggplot2], **`caret`** for modeling [@caret], **`kableExtra`** for creating tables [@kableExtra], and **`modelsummary`** for summarizing models and results [@modelsummary].
 
 ## Measurement
 
@@ -96,7 +101,6 @@ The outcome variable is **`overall_time_seconds`**. This is the primary dependen
 ggplot(cleaned_data, aes(x = overall_time_seconds)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black", alpha = 0.7) +
   labs(
-    title = "Distribution of Marathon Finish Times",
     x = "Finish Time (seconds)",
     y = "Frequency"
   ) +
@@ -123,11 +127,10 @@ The **predictor variables** (or independent variables) are the factors believed 
 #| warning: false
 #| message: false
 
-# create histogram of finish times
+# create histogram of age distribution
 ggplot(cleaned_data, aes(x = age)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black", alpha = 0.7) +
   labs(
-    title = "Distribution of Age",
     x = "Age",
     y = "Frequency"
   ) +
@@ -149,9 +152,8 @@ filtered_data <- cleaned_data %>%
   ungroup()
 
 ggplot(filtered_data, aes(x = iaaf_category)) +
-  geom_bar(fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_bar(fill = "lightpink", color = "black", alpha = 0.7) +
   labs(
-    title = "Distribution of Runners by Country (IAAF Category)",
     x = "Country (IAAF Category)",
     y = "Number of Runners"
   ) +
@@ -161,26 +163,28 @@ ggplot(filtered_data, aes(x = iaaf_category)) +
 
 ```{r}
 #| label: fig-genderdistribution
-#| fig-cap: "Gender distribution among marathon participants, revealing a relatively even split, with a slight predominance of male runners."
+#| fig-cap: "Gender distribution among marathon participants, showing a moderate predominance of male runners."
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
-# Gender distribution plot
+# Gender distribution bar plot
 ggplot(cleaned_data, aes(x = gender, fill = gender)) +
-  geom_bar(alpha = 0.7) +
+  geom_bar(stat = "count", alpha = 0.7) +
   labs(
-    title = "Gender Distribution of Runners",
+    title = "Gender Distribution of Marathon Participants",
     x = "Gender",
-    y = "Count"
+    y = "Number of Participants"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_manual(values = c("blue", "pink", "green"))
+
 ```
 
 ```{r}
 #| label: fig-racecountdistribution
-#| fig-cap: "Distribution of the number of races completed by runners, indicating that most participants are relatively inexperienced, with a smaller number of highly experienced runners."
+#| fig-cap: "Distribution of the number of races completed by runners, indicating that most participants are relatively inexperienced, with a smaller number of highly experienced runners. Plot scaled from 0 to 50 races completed."
 #| echo: false
 #| eval: true
 #| warning: false
@@ -190,67 +194,74 @@ ggplot(cleaned_data, aes(x = gender, fill = gender)) +
 ggplot(cleaned_data, aes(x = races_count)) +
   geom_histogram(binwidth = 1, fill = "purple", color = "black", alpha = 0.7) +
   labs(
-    title = "Distribution of Races Count",
     x = "Number of Races",
     y = "Frequency"
   ) +
   theme_minimal() +
-  xlim(0, 50) # Set x-axis limits to zoom in on more common values
+  xlim(0, 50)
 ```
 
-These predictors were selected based on both domain knowledge of marathon running and the availability of data in the dataset. The model examines how these factors collectively contribute to overall race performance, helping to provide insights into which variables most strongly influence marathon finishing times.
+These predictors were selected based on both domain knowledge of marathon running and the availability of data in the dataset. The model examines how these factors collectively contribute to overall race performance, helping to provide information into which variables most strongly influence marathon finishing times.
 
 # Model {#sec-model}
 
 ## Model Set-Up
 
-The goal of this analysis is to build a linear model to predict a runner’s overall marathon finishing time in seconds (`overall_time_seconds`) based on several predictor variables. The outcome variable, `overall_time_seconds`, is continuous and represents the total time in seconds taken by a runner to complete the marathon.
+The goal of this analysis is to build a model using R [@citeR] to predict a runner’s overall marathon finishing time in seconds (`overall_time_seconds`) based on several predictor variables. The outcome variable, `overall_time_seconds`, is continuous and represents the total time in seconds taken by a runner to complete the marathon. The GAM allows for capturing potential non-linear relationships between the predictors and the outcome.
 
-The linear regression model is specified as follows:
+The model is specified as follows:
 
-$$overall\_time\_seconds_i​=\beta_0​+\beta_1​⋅age_i​+\beta_2⋅gender_i​+\beta_3⋅race\_count_i​​+ \beta_4⋅iaaf\_category​​ + ϵ_i​$$
+$$overall\_time\_seconds_i​=\beta_0​+s(age_i​)+\beta_1⋅gender_i​+s(race\_count_i​​)+ \beta_2⋅iaaf\_category​​ + ϵ_i​$$
 
 Where:
 
--   `overall_time_seconds` is the marathon finishing time in seconds for the i-th runner.
+-   $overall\_time\_seconds_i$ is the marathon finishing time in seconds for the i-th runner.
 
--   `age` is the runner's age at the time of the race
+-   $s(age_i)$ is a smooth function of the runner’s age at the time of the race.
 
--   `gender` is the runner's gender (treated as a categorical variable).
+-   $gender_i$ is the runner's gender (treated as a categorical variable).
 
--   `race_count`​ is the total number of marathons the runner has participated in prior to the race.
+-   $s(race\_count_i)$ is a smooth function of the total number of NYRR races the runner has participated in.
 
--   `iaaf_category`​ is the country the runner is from under IAAF standards.
+-   $iaaf\_category_i$​ is the country the runner is from under IAAF standards.
 
--   epsilon is the error term, assumed to be normally distributed with a mean of 0 and constant variance $ϵ_i​∼N(0,\sigma^2)$
+-   $\epsilon_i$ is the error term, assumed to be normally distributed with a mean of 0 and constant variance $ϵ_i​∼N(0,\sigma^2)$
 
-The model assumes that the predictors have a linear relationship with the response variable, i.e., the overall time is linearly related to the selected features. We are interested in estimating the coefficients $\beta_1$, $\beta_2$,...,$\beta_4$ which represent the effect of each predictor on the outcome.
+This GAM model allows for smooth, non-linear effects of continuous predictors (**`age`** and **`races_count`**) while keeping the categorical predictors (**`gender`** and **`iaaf_category`**) in a linear framework.
 
 ## Model Justification
 
-The linear regression model was chosen for several reasons. Firstly, a linear regression model is straightforward and easy to interpret. Each coefficient directly indicates how much the marathon finishing time changes with a one-unit increase in the corresponding predictor, assuming all other variables remain constant.
+The GAM was chosen for this analysis due to its ability to capture non-linear relationships between predictors and the outcome variable, which is essential when dealing with continuous predictors like age and race count. Unlike traditional linear models, which assume a constant relationship between the predictors and the response variable, GAM allows for smooth, non-linear functions to model complex patterns in the data. Previous studies suggest that factors such as age and running experience do not have a simple linear relationship with marathon performance [@Connick2015]. For example, the effect of age on performance might not be constant across all age groups, and the relationship between the number of races a runner has participated in and their finishing time could also exhibit non-linear trends. By using smooth functions (denoted as $s()$ in the model) for continuous predictors like age and race count, the GAM offers a more flexible approach that can better model these complex relationships without imposing a strict parametric form.
 
-The model accommodates both continuous predictors (like age and race count) and categorical variables (such as gender and IAAF country classification). This flexibility makes it well-suited for the dataset.
+Moreover, while GAMs allow for these non-linear effects, they still retain interpretability. The model provides a clear visualization of how predictors like age and race count influence marathon times, with the smooth terms making it easy to understand the underlying trends. This interpretability is important in contexts where understanding the relationship between predictors and the outcome is as important as predictive accuracy.
 
-Additionally, previous studies in sports science consistently show that factors like age, gender, nationality, and running experience significantly affect marathon performance [@Connick2015, @Cheuvront2005, @kenyanrunners]. Including these predictors aligns with established domain knowledge, ensuring the model is based on sound reasoning.
+The inclusion of gender and IAAF category as categorical variables further enhances the model’s flexibility, as these variables likely have a linear relationship with marathon performance but differ across groups. By treating these as factors in the model, we account for the variations in marathon finishing times due to these categorical influences while keeping the overall model simple and interpretable.
 
-Models like random forests and generalized additive models (GAMs) were also explored. These can capture more complex relationships but are harder to interpret and communicate. Since interpretability is a priority for this analysis, linear regression was preferred. Alternative models may be more appropriate if predictive power is the main goal, but simplicity and transparency make linear regression the better choice for the current objectives.
+Alternative models, such as linear regression and random forests, were also considered. The linear regression model, while simple and easy to interpret, assumes that the relationship between the predictors and the outcome is linear. Given the potential non-linear nature of the relationships in this dataset, this assumption may be too restrictive. Additionally, linear regression does not accommodate interaction effects between predictors without explicitly adding interaction terms, which could lead to an incomplete model. While linear regression is often a good starting point, it was deemed insufficient for capturing the complexities in the data in this case.
+
+Random forests were also looked at as an alternative. They are highly flexible, non-parametric models that can handle non-linear relationships and interactions between predictors. Random forests are powerful in terms of predictive accuracy and can capture complex patterns in the data. However, they are harder to interpret compared to GAMs, as the results are more difficult to break down into understandable relationships between predictors and the outcome variable. Interpretability is a key priority in this analysis, as we are not only interested in prediction but also in understanding the underlying factors that influence marathon performance. For this reason, despite random forests’ strong predictive power, they were not selected.
 
 ## Assumptions and Limitations
 
-The linear regression model relies on several key assumptions. First, it assumes a linear relationship between the predictors and the outcome variable, meaning that a unit change in a predictor corresponds to a consistent change in the response variable. Second, the residuals of the model must be independent to ensure that the statistical inferences drawn, such as significance tests and confidence intervals, are valid. Third, the variance of the residuals (errors) should remain constant across all levels of the predictors, an assumption known as homoscedasticity. Fourth, the errors should follow a normal distribution, which is critical for accurate hypothesis testing and confidence interval estimation. Lastly, the model assumes no perfect multicollinearity among the predictors, as highly correlated variables can obscure the individual effects of each predictor on the outcome.
+The Generalized Additive Model (GAM) makes several key assumptions that must be considered when interpreting the results. One assumption is that the relationships between the continuous predictors (such as age and race count) and the outcome variable (overall marathon time) can be adequately captured by smooth functions. While GAMs are flexible and allow for non-linear relationships, they still rely on the assumption that these smooth functions are appropriate representations of the underlying trends. If the true relationships are more complex or if additional predictors are needed, the model may not fully capture the data's complexity.
 
-Regardless of these assumptions, the model has limitations. It may not effectively capture complex or non-linear relationships between predictors and the outcome, which could lead to an oversimplified interpretation of the data. For example, the effect of age on marathon times may not be linear across all age groups, and a non-linear model might better capture this relationship. Interaction effects, where certain combinations of predictors interact to influence finishing times, are not accounted for in this model. For instance, the combined effect of experience (race count) and age might have a more significant impact on marathon performance than either variable alone. Additionally, outliers—such as unusually high or low marathon times—can disproportionately affect the results, potentially skewing the analysis.
+Additionally, the model assumes that the residuals (the differences between the predicted and actual marathon times) are independent and identically distributed, a standard assumption for most regression models. This ensures that statistical tests, such as hypothesis tests for the significance of predictors, are valid. The model also assumes homoscedasticity, meaning that the variance of the residuals should remain constant across the range of predictors. If the variance of the residuals changes with different levels of the predictors, it could indicate that the model is misspecified.
 
-Other external factors that may influence marathon performance, but are not included in this model, could limit its explanatory power. Environmental factors like weather conditions on race day, course difficulty (e.g., elevation changes), and runner health or injuries are not considered in this analysis, though they could significantly affect finishing times. Moreover, the model assumes that all runners have similar training levels, but differences in training intensity, diet, and sleep patterns could also impact performance. The model does not address these outstanding factors, which may limit its applicability in specific scenarios. These assumptions and limitations should be carefully considered when interpreting the model’s results and applying them to broader contexts.
+One limitation of the GAM is that it does not account for interaction effects between predictors. For instance, the combined effect of age and race count on marathon performance could be more complex than the sum of their individual effects. A more sophisticated model could capture these interactions, potentially leading to a better understanding of how different factors together influence marathon finishing times. Another limitation is that the model assumes all relevant predictors are included. Environmental factors such as weather conditions on race day, course difficulty, and the runner's health status are not considered, even though these could significantly affect finishing times.
+
+Outliers and extreme values in the data may also impact the model, as they can disproportionately influence the estimates of the smooth functions. While the GAM is more robust to outliers than traditional linear models, the presence of extreme values could still lead to biased results. Furthermore, the model assumes that the relationships between predictors and the outcome are consistent across the entire dataset, which may not always hold true if there are subgroups of runners with distinctly different characteristics or behaviors.
+
+Finally, the GAM model may not generalize well to other populations, particularly if the sample is not representative of broader runner demographics. Differences in training, race conditions, or runner health that are not captured in the model could limit its applicability to other contexts. Therefore, while the GAM provides important context for marathon performance, its assumptions and limitations should be carefully considered when applying the model’s findings to different situations or populations.
 
 ## Model Validation
 
-Model validation is an essential part of ensuring that the model generalizes well to new, unseen data. To validate the performance of the linear model, we employed the following techniques:
+To validate the performance of the model, we employed the following techniques:
 
 1.  **Out-of-Sample Testing**: The data was randomly split into training and test sets, with 80% used for training the model and 20% reserved for testing. This allows us to assess how well the model performs on data that was not used during training.
 
-2.  **Root Mean Squared Error (RMSE)**: The RMSE was calculated on the test set to evaluate the model's predictive accuracy. In @tbl-keysummary we see that the RMSE is 3416.17. The RMSE provides an estimate of the average error between the predicted and actual values of the outcome variable, meaning that the average error between the model and actual time is ± 3416.17 seconds. A lower RMSE indicates better predictive performance.
+2.  **Root Mean Squared Error (RMSE)**: The RMSE was calculated on the test set to evaluate the model's predictive accuracy. In @tbl-keysummary we see that the RMSE is 3383.13. The RMSE provides an estimate of the average error between the predicts and actual values of the outcome variable, meaning that the average error between the model and actual time is 3383.13 seconds (56.38 minutes). A lower RMSE indicates better predictive performance.
+
+Extended versions of these tables can be found in @tbl-keysummaryfull and @tbl-smoothterms.
 
 ```{r}
 #| include: false
@@ -259,20 +270,17 @@ Model validation is an essential part of ensuring that the model generalizes wel
 
 finisher_model <- readRDS(here::here("models/finisher_model.rds"))
 
-# Clean the data: Remove rows with missing values, convert 'overall_time' to numeric (seconds), and ensure 'gender' is a factor
 marathon_data_cleaned <- cleaned_data %>%
   filter(!is.na(overall_time_seconds), !is.na(gender), !is.na(country_code)) %>%
   mutate(
-    # Recode gender values to a more interpretable form
     gender = recode(gender, "M" = "Male", "W" = "Female", "X" = "Other"), # Adjust "X" as needed
-    gender = as.factor(gender), # Ensure gender is a factor variable
-    overall_time_seconds = as.numeric(overall_time_seconds), # Convert overall_time to seconds if it's not already
-    country_code = as.factor(country_code), # Ensure country_code is a factor
-    races_count = as.integer(races_count) # Ensure races_count is an integer
+    gender = as.factor(gender),
+    overall_time_seconds = as.numeric(overall_time_seconds), 
+    country_code = as.factor(country_code),
+    races_count = as.integer(races_count) 
   )
 
-
-marathon_data_cleaned$predicted_time <- predict(finisher_model, newdata = marathon_data_cleaned)
+marathon_data_cleaned$predicted_time <- predict(finisher_model, newdata = marathon_data_cleaned, type = "response")
 ```
 
 ```{r}
@@ -284,17 +292,14 @@ marathon_data_cleaned$predicted_time <- predict(finisher_model, newdata = marath
 #| message: false
 
 modelsummary(finisher_model,
-  output = "kableExtra",
+  output = "tinytable",
   statistic = "std.error",
   coef_map = c(
     "(Intercept)" = "GenderMale",
     "genderFemale" = "GenderFemale",
-    "genderOther" = "GenderOther",
-    "age" = "Age",
-    "races_count" = "Race Count"
+    "genderOther" = "GenderOther"
   )
-) %>%
-  kable_styling(latex_options = c("striped", "scale_down"))
+) 
 ```
 
 # Results {#sec-results}
@@ -309,7 +314,6 @@ These statistics indicate that, on average, participants completed the marathon 
 #| warning: false
 #| message: false
 
-# Determine summary statistics
 summary_stats <- cleaned_data %>%
   summarise(
     AverageFinishTime = mean(overall_time_seconds / 60, na.rm = TRUE),
@@ -318,28 +322,26 @@ summary_stats <- cleaned_data %>%
     TotalParticipants = n()
   )
 
-# Display summary statistics
 summary_stats %>%
-  kable(
+  tt(
     col.names = c("Average Finish Time (minutes)", "Average Age (years)", "Average Pace (minutes/mile)", "Total Participants"),
     digits = 2,
     booktabs = TRUE
-  ) %>%
-  kable_styling(latex_options = c("striped", "scale_down"))
+  ) 
 ```
 
-@fig-predicted-vs-actual-age compares the predicted and actual marathon times across different age groups. The plot reveals a linear relationship between predicted and actual times, with the reference red dashed line representing perfect predictions. The data shows that older age groups tend to have higher finishing times, but the model performs consistently across age categories.
+@fig-predicted-vs-actual-age compares the predicted and actual marathon times across different age groups. The plot shows a linear relationship between predicted and actual times, with the reference red dashed line representing perfect predictions. The data shows that older age groups tend to have higher finishing times, but the model performs consistently across age categories.
 
 ```{r}
 #| label: fig-predicted-vs-actual-age
-#| fig-cap: Predicted vs Actual Marathon Finishing Times by Age Group. The scatter plot shows how well the predicted finishing times compare with the actual times across different age groups, with a reference line indicating perfect predictions.
+#| fig-cap: How well the predicted finishing times compare with the actual times across different age groups, with a reference line indicating perfect predictions.
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
 
-# Create age groups for segmentation
+# Create age groups
 marathon_data_cleaned$age_group <- cut(marathon_data_cleaned$age,
   breaks = c(18, 30, 40, 50, 60, 70, 80),
   labels = c("18-30", "31-40", "41-50", "51-60", "61-70", "71-80")
@@ -351,95 +353,91 @@ ggplot(marathon_data_cleaned, aes(x = overall_time_seconds / 60, y = predicted_t
   geom_point(alpha = 0.5) +
   geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") + # Add reference line for perfect predictions
   labs(
-    title = "Predicted vs. Actual Time by Age Group",
     x = "Actual Time (minutes)",
     y = "Predicted Time (minutes)"
   ) +
   theme_minimal() +
-  theme(legend.title = element_blank()) +
-  facet_wrap(~age_group)
+  theme(legend.title = element_blank())
 ```
 
 The distribution of predicted marathon finishing times by gender was visualized using a boxplot in @fig-predicted-time-gender. This analysis shows that the predicted times for males is lower than that for females, suggesting that the model may predict faster times for males on average. The distribution of predicted times for males tends to be slightly more spread out. The median predicted time for males is lower than that for females.
 
 ```{r}
 #| label: fig-predicted-time-gender
-#| fig-cap: Predicted Marathon Finishing Times by Gender. The boxplot displays the distribution of predicted marathon times for different genders, showing median values and variability in finishing times.
+#| fig-cap: "Distribution of predicted marathon times for different genders, highlighting the variability in finishing times."
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
-
-# Predicted time by gender
-ggplot(marathon_data_cleaned, aes(x = gender, y = predicted_time / 60, color = gender)) +
-  geom_boxplot() +
+# Predicted time by gender 
+ggplot(marathon_data_cleaned, aes(x = gender, y = predicted_time / 60, fill = gender)) +
+  geom_violin(trim = FALSE, alpha = 0.7) +
   labs(
-    title = "Predicted Time by Gender",
     x = "Gender",
     y = "Predicted Time (minutes)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
 ```
 
 The boxplot shown in @fig-predicted-time-age demonstrates the distribution of predicted marathon times across different age groups. As expected, older participants tend to have slower predicted finishing times, with the younger two age groups (18-30 and 31-40) showing the fastest predicted times on average.
 
 ```{r}
 #| label: fig-predicted-time-age
-#| fig-cap: Predicted Marathon Finishing Times by Age Group. This boxplot visualizes the predicted marathon times across various age groups, showing how age influences the predicted finishing times.
+#| fig-cap: "Distribution and density of predicted marathon times for various age groups"
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
 
-# Predicted time by age
-ggplot(marathon_data_cleaned, aes(x = age_group, y = predicted_time / 60, color = age_group)) +
-  geom_boxplot() +
+# Violin plot for predicted time by age group
+ggplot(marathon_data_cleaned, aes(x = age_group, y = predicted_time / 60, fill = age_group)) +
+  geom_violin(alpha = 0.6) +
   labs(
-    title = "Predicted Time by Age",
-    x = "Age",
+    x = "Age Group",
     y = "Predicted Time (minutes)"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set1")
+
 ```
 
 @tbl-predicted and @tbl-actual compare the actual best-performing groups with their corresponding predicted best groups across four categories: age, gender, number of races completed, and IAAF category. A category must have at least 25 entries/predictions to be considered.
 
 1.  **Age**
 
-    -   **Actual Best Group**: Age 28 had the fastest mean actual marathon time of 15,570.83 seconds, with a participant count of 2,042.
-
-    -   **Predicted Best Group**: The predictive model identified Age 18 as the best-performing group, with a faster predicted mean time of 14,340.60 seconds.
+    -   The actual and predicted best groups for Age were both 28, with closely aligned mean times: 15569.09 seconds (actual) and 15543.88 seconds (predicted).
 
 2.  **Gender**
 
-    -   The actual and predicted best groups for gender were both **Male**, with closely aligned mean times: **15,413.65 seconds** (actual) and **15,423.57 seconds** (predicted).
+    -   The actual and predicted best groups for gender were both Male, with closely aligned mean times: 15,413.65 seconds (actual) and 15,423.57 seconds (predicted).
 
 3.  **Races Count**
 
     -   **Actual Best Group**: Runners who participated in 5 NYRR races had the fastest mean actual time of 15,779.89 seconds, with a participant count of 818.
 
-    -   **Predicted Best Group**: The model predicted runners with 10 races as the best-performing group, with a slightly slower mean time of 16,042.84 seconds.
+    -   **Predicted Best Group**: The model predicted runners with 1 races as the best-performing group, with a slightly slower mean time of 16067.05 seconds.
 
 4.  **IAAF Category**
 
-    -   Both the actual and predicted best-performing group was KEN (Kenya), with mean times of 12,026.07 seconds (actual) and 12,079.54 seconds (predicted).
+    -   Both the actual and predicted best-performing group was KEN (Kenya), with mean times of 12,026.07 seconds (actual) and 12157.34 seconds (predicted).
 
 ```{r}
 #| label: tbl-actual
-#| tbl-cap: Actual Marathon Finishing Times by Group. This table shows the best group (age, gender, race count, IAAF category) based on actual marathon times.
+#| tbl-cap: This table shows the best group (age, gender, race count, IAAF category) based on actual marathon times.
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
 
-# Generate model predictions for the filtered dataset
-marathon_data_filtered <- marathon_data_cleaned %>%
-  mutate(predicted_time = predict(finisher_model, newdata = marathon_data_cleaned))
+# model predictions
+marathon_data_cleaned$predicted_time <- predict(finisher_model, newdata = marathon_data_cleaned, type = "response")
 
-# Function to calculate the best group for actual or predicted times
+# calculate the best group for actual or predicted times
 calculate_best_times <- function(data, group_var, time_col) {
   data %>%
     group_by({{ group_var }}) %>%
@@ -453,13 +451,13 @@ calculate_best_times <- function(data, group_var, time_col) {
     slice_head(n = 1)
 }
 
-# Calculate the best groups for actual times
-best_age_actual <- calculate_best_times(marathon_data_filtered, age, overall_time_seconds) %>% mutate(category = "Age")
-best_gender_actual <- calculate_best_times(marathon_data_filtered, gender, overall_time_seconds) %>% mutate(category = "Gender")
-best_race_count_actual <- calculate_best_times(marathon_data_filtered, races_count, overall_time_seconds) %>% mutate(category = "Races Count")
-best_iaaf_category_actual <- calculate_best_times(marathon_data_filtered, iaaf_category, overall_time_seconds) %>% mutate(category = "IAAF Category")
+# calculate the best groups for actual times
+best_age_actual <- calculate_best_times(marathon_data_cleaned, age, overall_time_seconds) %>% mutate(category = "Age")
+best_gender_actual <- calculate_best_times(marathon_data_cleaned, gender, overall_time_seconds) %>% mutate(category = "Gender")
+best_race_count_actual <- calculate_best_times(marathon_data_cleaned, races_count, overall_time_seconds) %>% mutate(category = "Races Count")
+best_iaaf_category_actual <- calculate_best_times(marathon_data_cleaned, iaaf_category, overall_time_seconds) %>% mutate(category = "IAAF Category")
 
-# Combine actual results into a single table
+# Combine results into a single table
 actual_table <- bind_rows(best_age_actual, best_gender_actual, best_race_count_actual, best_iaaf_category_actual) %>%
   select(
     category,
@@ -471,30 +469,27 @@ actual_table <- bind_rows(best_age_actual, best_gender_actual, best_race_count_a
     "Actual Mean Time (seconds)" = mean_time
   )
 
-# Format the actual table for display
-actual_table_display <- kable(actual_table, align = c("l", "l", "c")) %>%
-  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+# Display actual times table
+tt(actual_table, colnames = TRUE, rownames = FALSE)
 
-# Display both tables individually
-actual_table_display # Display Actual Times Table
 ```
 
 ```{r}
 #| label: tbl-predicted
-#| tbl-cap: Predicted Marathon Finishing Times by Group. This table shows the best group (age, gender, race count, IAAF category) based on predicted marathon times.
+#| tbl-cap: This table shows the best group (age, gender, race count, IAAF category) based on predicted marathon times.
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
 # Calculate the best groups for predicted times
-best_age_predicted <- calculate_best_times(marathon_data_filtered, age, predicted_time) %>% mutate(category = "Age")
-best_gender_predicted <- calculate_best_times(marathon_data_filtered, gender, predicted_time) %>% mutate(category = "Gender")
-best_race_count_predicted <- calculate_best_times(marathon_data_filtered, races_count, predicted_time) %>% mutate(category = "Races Count")
-best_iaaf_category_predicted <- calculate_best_times(marathon_data_filtered, iaaf_category, predicted_time) %>% mutate(category = "IAAF Category")
+best_age_predicted <- calculate_best_times(marathon_data_cleaned, age, predicted_time) %>% mutate(category = "Age")
+best_gender_predicted <- calculate_best_times(marathon_data_cleaned, gender, predicted_time) %>% mutate(category = "Gender")
+best_race_count_predicted <- calculate_best_times(marathon_data_cleaned, races_count, predicted_time) %>% mutate(category = "Races Count")
+best_iaaf_category_predicted <- calculate_best_times(marathon_data_cleaned, iaaf_category, predicted_time) %>% mutate(category = "IAAF Category")
 
 
-# Combine predicted results into a single table
+# Combine predicted results into table
 predicted_table <- bind_rows(best_age_predicted, best_gender_predicted, best_race_count_predicted, best_iaaf_category_predicted) %>%
   select(
     category,
@@ -506,44 +501,40 @@ predicted_table <- bind_rows(best_age_predicted, best_gender_predicted, best_rac
     "Predicted Mean Time (seconds)" = mean_time
   )
 
-# Format the predicted table for display
-predicted_table_display <- kable(predicted_table, align = c("l", "l", "c")) %>%
-  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
-
-predicted_table_display # Display Predicted Times Table
+tt(predicted_table, colnames = TRUE, rownames = FALSE)
 ```
 
 # Discussion {#sec-discussion}
 
 ## Predicting Marathon Finishing Times Using Demographic Data
 
-This study aimed to develop a model for predicting marathon finishing times based on demographic factors such as age and gender. By analyzing the relationship between these variables and actual marathon performance, we can gain valuable insights into the factors influencing marathon results and how well demographic information can predict performance. The model appears to capture key trends, such as the general increase in finishing times with age, as well as differences between genders, with males tending to have faster predicted times than females. These findings are consistent with previous literature suggesting that younger participants and males generally perform better in marathons. Moreover, the model was able to predict marathon finishing times with a high degree of accuracy, as evidenced by the close alignment of actual and predicted times in the scatter plot.
-
-The analysis also provided insight into the variability in predicted times, especially through the inclusion of prediction intervals, which revealed the range of uncertainty surrounding each prediction. This aspect of the analysis helps highlight the potential for error in any model and the need to consider prediction intervals when interpreting the results. In particular, the spread of predicted times by age and gender demonstrates the complexity of predicting marathon times for individuals based on demographic data alone.
+This study aimed to develop a model for predicting marathon finishing times based on demographic factors such as age and gender. By analyzing the relationship between these variables and actual marathon performance, we can gain important knowledge into the factors influencing marathon results and how well demographic information can predict performance. The model appears to capture key trends, such as the general increase in finishing times with age, as well as differences between genders, with males tending to have faster predicted times than females. These findings are consistent with previous literature suggesting that younger participants and males generally perform better in marathons.
 
 ## Age and Gender as Significant Predictors
 
-One of the key findings of this study is the role of age and gender in predicting marathon finishing times. The model demonstrated that age is a significant predictor, with older participants generally having slower predicted times. This trend aligns with what is commonly observed in long-distance running, where younger athletes often perform better due to physical factors such as active muscle mass and maximal oxygen consumption [@Connick2015]. The model also revealed a noticeable difference between genders, with males typically predicted to finish faster than females. This trend is consistent with general physiological differences between men and women, as distance running is determined largely by aerobic capacity and muscular strength, both of which men possess to larger degrees than women [@Cheuvront2005].
+One of the key findings of this study is the role of age and gender in predicting marathon finishing times. The model demonstrated that age is a significant predictor, with older participants generally having slower predicted times. This trend aligns with what is commonly observed in long-distance running, where younger athletes often perform better due to physical factors such as active muscle mass and maximal oxygen consumption [@Connick2015]. The model also displayed a noticeable difference between genders, with males typically predicted to finish faster than females. This trend is consistent with general physiological differences between men and women, as distance running is determined largely by aerobic capacity and muscular strength, both of which men possess to larger degrees than women [@Cheuvront2005].
 
 ## Kenyan Runners Dominate in Results
 
 Kenyan runners emerged as the fastest group, aligning with their global reputation in long-distance running. This dominance highlights the interplay of genetic, cultural, and training factors that contribute to exceptional performance. This aligns with previous studies which showed there are several factors that allow Kenyan distance runners to excel. This includes a genetic predisposition, high maximal oxygen intake, high hemoglobin, metabolic efficiency, favorable skeletal-muscle-fiber composition and oxidative enzyme profile, diet, altitude training, and motivation [@kenyanrunners].
 
-## Limitations of the Model:
+## Limitations: Demographic Focus, Dataset Bias, and Generalizability
 
-While the model provided valuable insights into the relationship between demographic factors and marathon performance, there are several limitations to consider. First, the model relies solely on demographic data (age, gender, and country), excluding other potentially influential factors such as training history, diet, and health conditions, which can significantly impact marathon performance. Additionally, the model assumes that demographic factors alone are sufficient to predict marathon times, but in reality, performance is likely influenced by a complex interplay of physical, psychological, and environmental factors that are not captured in the data.
+While the model provided important information into the relationship between demographic factors and marathon performance, there are several limitations to consider. First, the model relies solely on demographic data (age, gender, and country), excluding other potentially influential factors such as training history, diet, and health conditions, which can significantly impact marathon performance. Additionally, the model assumes that demographic factors alone are sufficient to predict marathon times, but in reality, performance is likely influenced by a complex interplay of physical, psychological, and environmental factors that are not captured in the data.
 
-Another limitation is the potential bias in the dataset. If the dataset used for training the model is not representative of the broader marathon population, the model's predictions could be skewed, leading to less accurate results for participants outside the dataset's scope. For example, if the majority of participants in the dataset come from a particular geographic region or socio-economic background, the model may not perform as well for runners from diverse backgrounds. In this case, since the data is solely from the NYC marathon, a significant proportion of the runners are from the NYC metro area and the USA in general.
+Another limitation is the potential bias in the dataset. If the dataset used for training the model is not representative of the broader marathon population, the model's predictions could be skewed, leading to less accurate results for participants outside the dataset's scope. Specifically, the dataset for this study is focused on participants in the NYC marathon, which could introduce biases related to geography, socio-economic status, and access to resources. For instance, the dataset may overrepresent runners from the NYC metro area, which is known for having a relatively high socio-economic status and access to professional training resources. As a result, the model may not generalize well to runners from more diverse or underserved backgrounds, who may face different challenges and have different training experiences that impact their performance. The marathon also requires a hefty fee in order to participate, further exacerbating socioeconomic bias.
 
-Finally, the model's ability to predict finishing times may decrease for extreme cases, such as elite runners or those with unusual age profiles (e.g., very young or very old participants).
+Additionally, the model assumes that demographic factors, such as age, gender, and nationality, have consistent and independent effects on marathon performance. However, in practice, these factors might interact in complex ways. For example, older runners from certain countries may have access to better healthcare and training resources than younger runners from other regions, leading to differences in their performance outcomes that the model does not account for. The interplay of these demographic variables may cause certain groups to be over- or underrepresented in the predictions, resulting in biased or inaccurate estimates for certain populations.
 
-## Next Steps:
+Finally, the model's ability to predict finishing times may decrease for extreme cases, such as elite runners or those with unusual age profiles (e.g., very young or very old participants). These runners often possess unique characteristics, such as rigorous training regimens or physical conditions that are not captured in the dataset, making their performance less predictable based on demographic data alone. As a result, the model may not be suitable for predicting performance for these outliers, limiting its usefulness for certain subgroups within the marathon community.
 
-Future research should explore several avenues for improving the model. First, expanding the dataset to include additional variables such as training habits, health conditions, and previous race performance could provide a more comprehensive view of the factors influencing marathon times. Incorporating these variables would likely enhance the model’s accuracy and offer more personalized predictions.
+## Next Steps: Enhance Predictive Accuracy and Expand Model Scope
 
-Additionally, current models typically assume linear relationships between predictors and outcomes, but marathon times may be influenced by more complex interactions that could be better captured by more advanced modeling techniques like random forests or gradient boosting.
+Future research should look at several avenues for improving the model. First, expanding the dataset to include additional variables such as training habits, health conditions, and previous race performance could provide a better view of the factors influencing marathon times. Incorporating these variables would likely enhance the model’s accuracy and offer more personalized predictions.
 
-Another area for future research could involve exploring the impact of environmental factors, such as weather conditions and course difficulty, on marathon performance. These factors could be incorporated into the model to help provide more accurate predictions for races held under different conditions.
+While the current model uses a GAM, which allows for non-linear relationships between predictors and the outcome, marathon times may be influenced by more complex interactions that could be better captured by other modeling techniques like random forests or gradient boosting.
+
+Another area for future research could involve looking at the impact of environmental factors, such as weather conditions and course difficulty, on marathon performance. These factors could be incorporated into the model to help provide more accurate predictions for races held under different conditions. Additionally, accounting for these external variables would contribute to a more holistic understanding of what drives marathon performance, particularly in varied race settings.
 
 # Appendix {#sec-appendix}
 
@@ -551,13 +542,13 @@ Another area for future research could involve exploring the impact of environme
 
 The cleaning process began with renaming all columns to standardized and intuitive names, improving readability and ensuring consistency with analysis conventions. Next, data types were adjusted for various variables to align with their intended use. Numerical fields, such as age, overall place, and race count, were converted to integers, while time-based variables like overall time and pace were transformed from string formats (e.g., HH:MM:SS or MM:SS) into total seconds for accurate modeling and analysis. Categorical variables, such as gender and country codes, were encoded as factors to enable statistical comparisons.
 
-Missing values were addressed by assigning meaningful placeholders to critical fields, such as substituting "Unknown" for missing first names, cities, and states, or "N/A" for missing IAAF categories. To facilitate numerical modeling, overall time was split and converted into total seconds, while pace was converted into seconds per mile, allowing for consistent performance comparisons.
+Missing values were addressed by assigning meaningful placeholders to relevant fields, such as substituting "Unknown" for missing first names, cities, and states, or "N/A" for missing IAAF categories. To facilitate numerical modeling, overall time was split and converted into total seconds, while pace was converted into seconds per mile, allowing for consistent performance comparisons.
 
 Finally, the cleaned dataset was exported in Parquet format using the `arrow` library, chosen for its efficiency in storage and processing. These steps collectively ensured that the dataset was reliable, consistent, and optimized for in-depth analysis.
 
 ## Idealized Methodology
 
-### 1. **What is the population, frame, and sample?**
+**What is the population, frame, and sample?**
 
 -   **Population**: The population for this study would be all marathon runners globally, including recreational, amateur, and elite athletes who participate in marathons. This includes runners who participate in a wide variety of events, from local races to prestigious international marathons.
 
@@ -565,7 +556,7 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 -   **Sample**: The sample would be a subset of marathon runners from the frame. To make this sample more manageable, it could be stratified by factors such as age, gender, race distance (standard marathon vs. ultra), or region. The sample could include both runners who have already participated in multiple marathons as well as first-time marathoners, ensuring diversity in the data.
 
-### 2. **How is the sample recruited?**
+**How is the sample recruited?**
 
 -   **Recruitment through Race Registrations**: Runners who register for marathons could be invited to participate in the study. During the registration process, participants could opt-in to share their marathon data, including times, training habits, and performance metrics, with the study organizers. This can be done through a consent form or a checkbox during the registration process.
 
@@ -575,11 +566,11 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 -   **Direct Invitations to Past Participants**: If accessible, invitations could also be sent to runners who have participated in recent marathons, using event data or online race databases.
 
-### 3. **What sampling approach is taken, and what are some of the trade-offs of this?**
+**What sampling approach is taken, and what are some of the trade-offs of this?**
 
-**Sampling Approach**: The study could use a **stratified random sampling** approach, where participants are grouped into strata based on factors such as age, gender, marathon experience, and race times. From each group, participants would be randomly selected, ensuring that all key demographics are represented in the final sample. This approach ensures diversity and gives insights into the performance of various runner types (elite vs. recreational, young vs. older, etc.). **Trade-offs**:
+**Sampling Approach**: The study could use a **stratified random sampling** approach, where participants are grouped into strata based on factors such as age, gender, marathon experience, and race times. From each group, participants would be randomly selected, ensuring that all key demographics are represented in the final sample. This approach ensures diversity and gives understanding into the performance of various runner types (elite vs. recreational, young vs. older, etc.). **Trade-offs**:
 
--   **Representativeness**: Stratified sampling ensures that the sample reflects the diversity of the marathon population, allowing for more accurate insights across various demographic groups.
+-   **Representativeness**: Stratified sampling ensures that the sample reflects the diversity of the marathon population, allowing for more accurate analysis across various demographic groups.
 
 -   **Higher Precision**: By ensuring that each subgroup is adequately represented, stratified sampling minimizes the potential bias that could arise from over- or under-representing certain groups.
 
@@ -587,7 +578,7 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 -   **Cost**: If the sample size is large and the process involves targeted outreach, the cost of recruitment (e.g., incentives, outreach campaigns) could be higher than other simpler approaches, such as convenience sampling.
 
-### 4. **How is non-response handled?**
+**How is non-response handled?**
 
 Non-response occurs when individuals invited to participate in the study choose not to provide their data or drop out of the study. Addressing non-response is important for maintaining the quality and representativeness of the study.
 
@@ -599,11 +590,11 @@ Non-response occurs when individuals invited to participate in the study choose 
 
 -   **Post-Study Adjustment**: If certain groups are systematically underrepresented (e.g., female runners, older participants), the data analysis could use **post-hoc adjustments** to account for these disparities and ensure that the final model is as unbiased as possible.
 
-### 5. **What is good and bad about the questionnaire?**
+**What is good and bad about the questionnaire?**
 
 -   **More Context**: Participants could be asked to report on key factors that influence their performance, such as training regimen, injury history, nutrition, sleep quality, and mental state. This contextual data could significantly improve the predictive accuracy of the model by accounting for variables not captured in race results alone.
 
--   **Flexibility**: The questionnaire could be designed to ask open-ended or scaled questions, allowing for a broad spectrum of data to be collected. This could help uncover insights that are specific to individual runners or subgroups.
+-   **Flexibility**: The questionnaire could be designed to ask open-ended or scaled questions, allowing for a broad spectrum of data to be collected. This could help uncover information that is specific to individual runners or subgroups.
 
 -   **Self-Reporting Bias**: One of the major issues with questionnaires is the potential for self-reporting bias. Participants may overestimate their training efforts, underestimate injuries, or report idealized versions of their habits, leading to inaccurate data. This can reduce the reliability of the findings and introduce errors into the predictive model.
 
@@ -613,19 +604,22 @@ Non-response occurs when individuals invited to participate in the study choose 
 
 ## Idealized Survey
 
-Certainly! Here's an example **survey questionnaire** designed to collect demographic and training data from marathon runners. The structure includes an **introductory section**, followed by **well-constructed questions** ordered logically, and ends with a **thank-you message**. The question types are varied, ensuring the survey is engaging and collects the necessary data for building a more accurate marathon performance model.
+A sample survey can be found at: <https://forms.gle/iRL8zHXrGtsoF3dJ8>
 
-### **Marathon Performance and Training Survey**
+The survey questions are detailed below as well for convenience.
 
-### **Introduction**
+**Marathon Performance and Training Survey**
+
+**Introduction**
 
 Thank you for participating in this survey! We are collecting data on marathon runners to better understand the factors that contribute to marathon performance. This survey should take approximately 10 minutes to complete. All responses will be kept confidential and used solely for research purposes.
 
-**Contact Information:** If you have any questions about the survey or the data collection process, please contact **Survey Coordinator**: Sophia Brothers
+**Contact Information:** If you have any questions about the survey or the data collection process, please contact
 
+**Survey Coordinator**: Sophia Brothers\
 **Email**: sophia.brothers\@mail.utoronto.ca
 
-### **Section 1: Demographic Information**
+**Section 1: Demographic Information**
 
 **1. Age Group:** (Select one)
 
@@ -651,11 +645,13 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Prefer not to say
 
+-   Other: \_\_\_\_\_\_\_\_
+
 **3. Biological Sex:** (Select one)
 
--   Male
+-   Man
 
--   Female
+-   Woman
 
 -   Intersex
 
@@ -687,7 +683,7 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Other (please specify): \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-### **Section 2: Marathon Experience**
+**Section 2: Marathon Experience**
 
 **5. How many marathons have you completed?** (Select one)
 
@@ -715,7 +711,7 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Other (please specify): \_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-### **Section 3: Training Habits**
+**Section 3: Training Habits**
 
 **8. On average, how many hours per week do you spend training for a marathon?** (Select one)
 
@@ -755,9 +751,9 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Participate for fun/charity
 
--   Other (please specify): \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+-   Other (please specify): \_\_\_\_\_\_\_\_\_\_\_
 
-**11. Have you ever experienced any of the following training-related injuries?**
+**11. Have you ever experienced any of the following training-related injuries?** (select all that apply)
 
 -   Runner’s knee
 
@@ -775,7 +771,7 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Other (please specify): \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-### **Section 4: Race-Day Factors**
+**Section 4: Race-Day Factors**
 
 **12. What time of day do you typically prefer to run marathons?** (Select one)
 
@@ -787,7 +783,7 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   Evening (after 6 PM)
 
-**13. Do you follow a specific nutrition plan during your marathon training or on race day** (Select one)
+**13. Do you follow a specific nutrition plan during your marathon training or on race day?** (Select one)
 
 -   Yes, I follow a strict nutrition plan
 
@@ -797,7 +793,7 @@ Thank you for participating in this survey! We are collecting data on marathon r
 
 -   I follow a hydration-only plan
 
-### **Final Section**
+**Final Section**
 
 Thank you for completing this survey! Your responses will help improve training recommendations for runners.
 
@@ -805,22 +801,62 @@ Thank you for completing this survey! Your responses will help improve training 
 
 ```{r}
 #| label: tbl-keysummaryfull
-#| tbl-cap: Summary of the marathon finishing time model, which includes key variables such as age, gender, pace, race count, and age-graded performance. The table presents the model coefficients along with their standard errors.
+#| tbl-cap: Summary of the marathon finishing time model, which includes key variables such as gender and country. The table presents the model coefficients along with their standard errors.
 #| echo: false
 #| eval: true
 #| warning: false
 #| message: false
 
-# Load the model
-finisher_model <- readRDS(here::here("models/finisher_model.rds"))
+model_summary <- summary(finisher_model)
 
-# Display the model summary as a table with kableExtra
-modelsummary(finisher_model,
-  output = "kableExtra",
-  statistic = "std.error",
-  longtable = TRUE
-) %>%
-  kable_styling(latex_options = c("striped", "scale_down"))
+coefficients_df <- data.frame(model_summary$p.table)
+
+
+#  linear terms
+linear_df <- coefficients_df %>%
+  mutate(Term_Type = "Linear") %>%
+  rownames_to_column("Term") %>%
+  mutate(
+    Term = gsub("[^[:alnum:]_\\s]", "", Term)  # Clean the 'Term' column
+  ) 
+
+
+# linear coefficients table using kable
+linear_table <- kable(linear_df, format = "html", digits = 3)
+
+linear_table
+
+
+
+```
+
+```{r}
+#| label: tbl-smoothterms
+#| tbl-cap: Summary of the marathon finishing time model, which includes smooth variables such as age and race count The table presents the model coefficients along with their standard errors.
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+# Extract smooth terms from model
+smooth_terms_df <- data.frame(model_summary$s.table)
+
+# Process smooth terms
+smooth_df <- smooth_terms_df %>%
+  mutate(Term_Type = "Smooth") %>%
+  rownames_to_column("Term") %>%
+  mutate(
+    Term = case_when(
+      grepl("s\\(age\\)", Term) ~ "Smooth Term - Age",
+      grepl("s\\(races_count\\)", Term) ~ "Smooth Term - Race Count",
+      TRUE ~ Term
+    ) 
+  )
+
+# smooth terms table using kable
+smooth_table <- kable(smooth_df, format = "html", digits = 3)
+smooth_table
+
 ```
 
 \newpage
