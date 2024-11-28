@@ -5,23 +5,23 @@
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: Ensure the `tidyverse`, `here`, 'arrow', and `testthat` packages are installed.
+# Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
-#### Load Libraries ####
+# load libraries
 library(tidyverse)
 library(here)
 library(testthat)
 library(arrow)
 
-#### Load Simulated Data ####
+# load data
 simulated_data <- read_parquet(here::here("data/simulated_data/marathon_results_simulated.parquet"))
 
-#### Define Tests ####
 
 test_that("Simulated data has correct structure", {
   # Test that the data is a tibble
   expect_s3_class(simulated_data, "tbl_df")
 
-  # Test that the data has 17 columns (based on our simulated columns)
+  # Test that the data has 17 columns
   expect_equal(ncol(simulated_data), 17)
 
   # Test that the data has the correct column names

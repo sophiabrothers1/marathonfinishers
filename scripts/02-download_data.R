@@ -4,8 +4,8 @@
 # Date: November 23rd, 2024
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse` package must be installed
-# Any other information needed? Make sure you are in the `US_Election_2024` rproj
+# Pre-requisites: The `readr` package must be installed
+# Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
 # load library
 library(readr)

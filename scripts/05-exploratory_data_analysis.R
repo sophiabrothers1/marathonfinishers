@@ -1,10 +1,11 @@
 #### Preamble ####
-# Purpose: This script performs exploratory data analysis (EDA) on the cleaned marathon finisher data.
+# Purpose: This script performs exploratory data analysis on the cleaned marathon finisher data.
 # Author: Sophia Brothers
 # Date: November 23rd, 2024
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse`, `here`, and `ggplot2` packages must be installed.
+# Pre-requisites: The `tidyverse`, `here`, and `lubridate` packages must be installed.
+# Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
 library(tidyverse)
 library(here)

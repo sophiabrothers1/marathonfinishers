@@ -6,16 +6,17 @@
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
 # Pre-requisites: Ensure the `tidyverse`, `caret`, and `here` packages are installed.
+# Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
-# Load necessary libraries
+# Load libraries
 library(tidyverse)
 library(caret)
 library(here)
 
-# Load the cleaned dataset (adjust the file path as needed)
+# Load the cleaned dataset
 marathon_data <- read_parquet(here::here("data/analysis_data/marathon_results_cleaned.parquet"))
 
-# Clean the data again to ensure consistency with the model
+# Clean the data again
 marathon_data_cleaned <- marathon_data %>%
   filter(!is.na(overall_time_seconds), !is.na(gender), !is.na(country_code)) %>%
   mutate(
@@ -43,7 +44,7 @@ finisher_model <- readRDS(here::here("models/finisher_model.rds"))
 # Perform out-of-sample prediction on the test set
 predicted_times <- predict(finisher_model, newdata = test_data)
 
-# Calculate the RMSE (Root Mean Squared Error)
+# Calculate the RMSE
 rmse_value <- sqrt(mean((predicted_times - test_data$overall_time_seconds)^2))
 
 # Print RMSE value

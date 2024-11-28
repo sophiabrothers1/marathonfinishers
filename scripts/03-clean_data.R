@@ -1,11 +1,11 @@
 #### Preamble ####
 # Purpose: This script reads and cleans raw marathon finisher data,
-# performing various transformations, and outputs the cleaned data to a Parquet file.
+#          performing various transformations, and outputs the cleaned data to a Parquet file.
 # Author: Sophia Brothers
 # Date: November 23rd, 2024
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse`, 'here', and 'arrow' packages must be installed
+# Pre-requisites: The `tidyverse`, 'here', 'dplyr', 'stringr', and 'arrow' packages must be installed
 # Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
 # Load libraries

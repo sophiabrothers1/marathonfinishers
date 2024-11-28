@@ -4,7 +4,7 @@
 # Date: November 23rd, 2024
 # Contact: sophia.brothers@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: The `tidyverse`, `here`, `arrow`, and `testthat` packages must be installed.
+# Pre-requisites: The `testthat`, `dplyr`, and `lubridate` packages must be installed.
 # Any other information needed? Make sure you are in the `marathon_finishers` rproj
 
 # Load required libraries
@@ -15,6 +15,7 @@ library(lubridate)
 # Load the cleaned data
 cleaned_data <- arrow::read_parquet(here::here("data/analysis_data/marathon_results_cleaned.parquet"))
 
+# test that column names are correct
 test_that("Cleaned data has the correct columns", {
   expected_columns <- c(
     "runner_id", "first_name", "bib_number", "age", "gender", "city",
@@ -27,6 +28,7 @@ test_that("Cleaned data has the correct columns", {
   expect_equal(actual_columns, expected_columns, info = "Column names do not match expected names")
 })
 
+# test that the data types are correct
 test_that("Data types of columns are correct", {
   expect_type(cleaned_data$runner_id, "character")
   expect_type(cleaned_data$first_name, "character")
@@ -38,19 +40,18 @@ test_that("Data types of columns are correct", {
   expect_type(cleaned_data$state_province, "character")
   expect_type(cleaned_data$iaaf_category, "character")
   expect_type(cleaned_data$overall_place, "integer")
-  expect_type(cleaned_data$overall_time, "character") # `overall_time` is a character type before conversion
-  expect_type(cleaned_data$pace, "character") # pace is also character (HH:MM)
+  expect_type(cleaned_data$overall_time, "character")
+  expect_type(cleaned_data$pace, "character")
   expect_type(cleaned_data$gender_place, "integer")
   expect_type(cleaned_data$age_grade_time, "integer")
   expect_type(cleaned_data$age_grade_place, "integer")
   expect_type(cleaned_data$age_grade_percent, "double")
   expect_type(cleaned_data$races_count, "integer")
-
-  # Check new columns for correctness of types
   expect_type(cleaned_data$overall_time_seconds, "integer")
   expect_type(cleaned_data$pace_seconds, "integer")
 })
 
+# test that the missing values are gone
 test_that("Replaced missing values are correct", {
   expect_true(all(cleaned_data$first_name != ""), info = "Missing values in first_name were not replaced")
   expect_true(all(cleaned_data$city != ""), info = "Missing values in city were not replaced")
@@ -58,18 +59,21 @@ test_that("Replaced missing values are correct", {
   expect_true(all(cleaned_data$iaaf_category != ""), info = "Missing values in iaaf_category were not replaced")
 })
 
+# test that overall time is converted to seconds
 test_that("overall_time is correctly converted to seconds", {
   # Check that the overall_time_seconds column is correctly calculated as integer
   expect_true(all(cleaned_data$overall_time_seconds > 0), info = "Some values in overall_time_seconds are not positive")
   expect_true(all(!is.na(cleaned_data$overall_time_seconds)), info = "Some values in overall_time_seconds are NA")
 })
 
+# test that pace is converted to seconds
 test_that("pace is correctly converted to seconds", {
   # Check that the pace_seconds column is correctly calculated as integer
   expect_true(all(cleaned_data$pace_seconds > 0), info = "Some values in pace_seconds are not positive")
   expect_true(all(!is.na(cleaned_data$pace_seconds)), info = "Some values in pace_seconds are NA")
 })
 
+# test that overall time is larger than pace
 test_that("overall_time_seconds is greater than pace_seconds", {
   # Check that overall time in seconds is greater than pace in seconds (somewhat dependent on the race distance, but overall time should be larger)
   expect_true(all(cleaned_data$overall_time_seconds >= cleaned_data$pace_seconds), info = "Some overall times are smaller than pace times")
