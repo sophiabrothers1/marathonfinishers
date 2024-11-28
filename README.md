@@ -15,7 +15,7 @@ The data used in this analysis comes from Data is Plural, capturing runners' dem
 
 The repo is structured as:
 
--   `data/raw_data` contains the raw data as obtained from [https://projects.fivethirtyeight.com/polls/president-general/2024/national/.](https://www.data-is-plural.com/archive/2024-11-13-edition/).
+-   `data/raw_data` contains the raw data as obtained from https://www.data-is-plural.com/archive/2024-11-13-edition/.
 -   `data/analysis_data` contains the cleaned datasets that were constructed.
 -   `data/simulated_data` contains the simulated data that were constructed.
 -   `models` contains fitted models. 
