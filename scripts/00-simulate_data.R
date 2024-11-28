@@ -93,4 +93,4 @@ simulated_data <- tibble(
   )
 )
 
-write_parquet(simulated_data, here::here("data/simulated_data/marathon_results_simulated_with_interactions.parquet"))
+write_parquet(simulated_data, here::here("data/simulated_data/marathon_results_simulated.parquet"))
