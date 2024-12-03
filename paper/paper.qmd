@@ -173,7 +173,6 @@ ggplot(filtered_data, aes(x = iaaf_category)) +
 ggplot(cleaned_data, aes(x = gender, fill = gender)) +
   geom_bar(stat = "count", alpha = 0.7) +
   labs(
-    title = "Gender Distribution of Marathon Participants",
     x = "Gender",
     y = "Number of Participants"
   ) +
@@ -552,7 +551,7 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 -   **Population**: The population for this study would be all marathon runners globally, including recreational, amateur, and elite athletes who participate in marathons. This includes runners who participate in a wide variety of events, from local races to prestigious international marathons.
 
--   **Frame**: The frame refers to the specific set of marathon runners who will be considered in the study. Ideally, this would include individuals who have participated in a marathon within the past year, providing up-to-date performance data. The frame could be obtained from event organizers, race registries, or online race databases that track marathon results, such as the *Marathon Handbook* or *World Athletics*.
+-   **Frame**: Ideally, this would include individuals who have participated in a marathon within the past year, providing up-to-date performance data. The frame could be obtained from event organizers, race registries, or online race databases that track marathon results.
 
 -   **Sample**: The sample would be a subset of marathon runners from the frame. To make this sample more manageable, it could be stratified by factors such as age, gender, race distance (standard marathon vs. ultra), or region. The sample could include both runners who have already participated in multiple marathons as well as first-time marathoners, ensuring diversity in the data.
 
@@ -560,47 +559,43 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 -   **Recruitment through Race Registrations**: Runners who register for marathons could be invited to participate in the study. During the registration process, participants could opt-in to share their marathon data, including times, training habits, and performance metrics, with the study organizers. This can be done through a consent form or a checkbox during the registration process.
 
--   **Online Platforms and Running Clubs**: Social media platforms, running clubs, or online marathon communities (such as *Reddit’s Running Community*, *Runkeeper*, or *Strava*) could also be used to recruit participants. These platforms allow researchers to directly contact a wide range of runners and invite them to participate.
+-   **Online Platforms and Running Clubs**: Social media platforms, running clubs, or online marathon communities (such as Strava) could also be used to recruit participants.
 
--   **Incentives**: To increase participation, participants could be incentivized with benefits like personalized marathon performance analysis, discounted race entries, or access to exclusive content (e.g., training guides).
+-   **Incentives**: To increase participation, participants could be incentivized with benefits like personalized marathon performance analysis, discounted or guaranteed race entries, or access to exclusive content (e.g., training guides).
 
 -   **Direct Invitations to Past Participants**: If accessible, invitations could also be sent to runners who have participated in recent marathons, using event data or online race databases.
 
 **What sampling approach is taken, and what are some of the trade-offs of this?**
 
-**Sampling Approach**: The study could use a **stratified random sampling** approach, where participants are grouped into strata based on factors such as age, gender, marathon experience, and race times. From each group, participants would be randomly selected, ensuring that all key demographics are represented in the final sample. This approach ensures diversity and gives understanding into the performance of various runner types (elite vs. recreational, young vs. older, etc.). **Trade-offs**:
+**Sampling Approach**: The study could use a stratified random sampling approach, where participants are grouped into strata based on factors such as age, gender, marathon experience, and race times. From each group, participants would be randomly selected, ensuring that all key demographics are represented in the final sample. This approach ensures diversity and gives understanding into the performance of various runner types (elite vs. recreational, young vs. older, etc.).
 
--   **Representativeness**: Stratified sampling ensures that the sample reflects the diversity of the marathon population, allowing for more accurate analysis across various demographic groups.
+**Trade-offs**:
 
--   **Higher Precision**: By ensuring that each subgroup is adequately represented, stratified sampling minimizes the potential bias that could arise from over- or under-representing certain groups.
+-   Stratified sampling ensures that the sample reflects the diversity of the marathon population.
 
--   **Complexity**: Stratified sampling can be logistically complex, requiring careful categorization and segmentation of the sample. This can be time-consuming and might involve additional administrative effort to ensure proper stratification.
+-   If each subgroup is adequately represented, stratified sampling minimizes the potential bias that could arise from over- or under-representing certain groups.
 
--   **Cost**: If the sample size is large and the process involves targeted outreach, the cost of recruitment (e.g., incentives, outreach campaigns) could be higher than other simpler approaches, such as convenience sampling.
+-   Stratified sampling can be logistically complex, requiring careful segmentation of the sample. This can be time-consuming and might involve additional effort to ensure proper stratification.
+
+-   The cost of recruitment (e.g., incentives) could be higher than other simpler approaches, such as convenience sampling.
 
 **How is non-response handled?**
 
-Non-response occurs when individuals invited to participate in the study choose not to provide their data or drop out of the study. Addressing non-response is important for maintaining the quality and representativeness of the study.
+-   If a participant does not respond initially, follow-up emails, phone calls, or social media messages could be sent to encourage them to complete the survey or data collection process.
 
--   **Follow-up Invitations**: If a participant does not respond initially, follow-up emails, phone calls, or social media messages could be sent to encourage them to complete the survey or data collection process. These reminders can highlight the benefits of participation, such as personalized analysis of race performance.
+-   Offering additional incentives (e.g., free access to marathon training programs or race entry discounts/guarantees) can motivate reluctant participants to engage with the study.
 
--   **Incentives**: Offering additional incentives (e.g., free access to marathon training programs or race entry discounts) can motivate reluctant participants to engage with the study.
+-   In case of high non-response rates, the study could adjust the results using statistical weighting. If certain demographic groups (e.g., older or less experienced runners) are underrepresented due to non-response, their data could be weighted more heavily to correct for this discrepancy.
 
--   **Weighting for Non-Response**: In case of high non-response rates, the study could adjust the results using **statistical weighting**. If certain demographic groups (e.g., older or less experienced runners) are underrepresented due to non-response, their data could be weighted more heavily to correct for this discrepancy.
-
--   **Post-Study Adjustment**: If certain groups are systematically underrepresented (e.g., female runners, older participants), the data analysis could use **post-hoc adjustments** to account for these disparities and ensure that the final model is as unbiased as possible.
+-   If certain groups are systematically underrepresented (e.g., female runners, older participants), the data analysis could useadjustments to account for these disparities and ensure that the final model is as unbiased as possible.
 
 **What is good and bad about the questionnaire?**
 
--   **More Context**: Participants could be asked to report on key factors that influence their performance, such as training regimen, injury history, nutrition, sleep quality, and mental state. This contextual data could significantly improve the predictive accuracy of the model by accounting for variables not captured in race results alone.
+-    One of the major issues with questionnaires is the potential for self-reporting bias. Participants may overestimate their training efforts, underestimate injuries, or report idealized versions of their habits, leading to inaccurate data. This can reduce the reliability of the findings and introduce errors into the predictive model.
 
--   **Flexibility**: The questionnaire could be designed to ask open-ended or scaled questions, allowing for a broad spectrum of data to be collected. This could help uncover information that is specific to individual runners or subgroups.
+-   Participants may skip questions or provide inconsistent responses, making it difficult to create a clean, reliable dataset. Data cleaning processes would be necessary to handle missing or inconsistent data.
 
--   **Self-Reporting Bias**: One of the major issues with questionnaires is the potential for self-reporting bias. Participants may overestimate their training efforts, underestimate injuries, or report idealized versions of their habits, leading to inaccurate data. This can reduce the reliability of the findings and introduce errors into the predictive model.
-
--   **Incomplete or Inconsistent Responses**: Participants may skip questions or provide inconsistent responses, making it difficult to create a clean, reliable dataset. Data cleaning processes would be necessary to handle missing or inconsistent data.
-
--   **Recall Bias**: Runners may struggle to remember specific details about their training or race-day experiences, leading to recall bias. For example, they may not accurately report the total hours of training or the specific times they ran certain distances.
+-   Runners may struggle to remember specific details about their training or race-day experiences, leading to recall bias. For example, they may not accurately report the total hours of training or the specific times they ran certain distances.
 
 ## Idealized Survey
 
