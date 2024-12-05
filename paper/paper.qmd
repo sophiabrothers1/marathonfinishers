@@ -535,7 +535,11 @@ While the current model uses a GAM, which allows for non-linear relationships be
 
 Another area for future research could involve looking at the impact of environmental factors, such as weather conditions and course difficulty, on marathon performance. These factors could be incorporated into the model to help provide more accurate predictions for races held under different conditions. Additionally, accounting for these external variables would contribute to a more holistic understanding of what drives marathon performance, particularly in varied race settings.
 
-# Appendix {#sec-appendix}
+\newpage
+
+\appendix
+
+# Appendix {.unnumbered}
 
 ## Data Cleaning Notes
 
@@ -591,7 +595,7 @@ Finally, the cleaned dataset was exported in Parquet format using the `arrow` li
 
 **What is good and bad about the questionnaire?**
 
--    One of the major issues with questionnaires is the potential for self-reporting bias. Participants may overestimate their training efforts, underestimate injuries, or report idealized versions of their habits, leading to inaccurate data. This can reduce the reliability of the findings and introduce errors into the predictive model.
+-   One of the major issues with questionnaires is the potential for self-reporting bias. Participants may overestimate their training efforts, underestimate injuries, or report idealized versions of their habits, leading to inaccurate data. This can reduce the reliability of the findings and introduce errors into the predictive model.
 
 -   Participants may skip questions or provide inconsistent responses, making it difficult to create a clean, reliable dataset. Data cleaning processes would be necessary to handle missing or inconsistent data.
 
